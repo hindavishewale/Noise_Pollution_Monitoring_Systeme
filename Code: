@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Noise Pollution Monitoring Dashboard</title>
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Toastify CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Toastify JS -->
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <!-- Animate.css for animations -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  <!-- AOS for scroll animations -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-color: #f0f8ff;
+      --card-bg: #fff;
+      --text-color: #222;
+      --primary-color: #00bcd4;
+      --secondary-color: #0097a7;
+      --danger-color: #ff4d4d;
+      --warning-color: #ff9800;
+      --success-color: #4caf50;
+      --shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      --border-radius: 12px;
+      --moderate-color: #2196F3;
+      --chart-gradient-start: rgba(0, 188, 212, 0.3);
+      --chart-gradient-end: rgba(0, 188, 212, 0.1);
+    }
+
+    body.dark-mode {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #f0f0f0;
+      --shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      --chart-gradient-start: rgba(0, 188, 212, 0.2);
+      --chart-gradient-end: rgba(0, 188, 212, 0.05);
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      line-height: 1.6;
+    }
+
+    header {
+      text-align: center;
+      padding: 25px;
+      position: relative;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      border-radius: 0 0 var(--border-radius) var(--border-radius);
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+      transform: rotate(30deg);
+      pointer-events: none;
+    }
+
+    .toggle-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      background-color: rgba(255,255,255,0.2);
+      color: #fff;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+      z-index: 1;
+    }
+
+    .toggle-btn:hover {
+      background-color: rgba(255,255,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    .card {
+      background: var(--card-bg);
+      color: var(--text-color);
+      margin: 15px;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+      pointer-events: none;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .status-low {
+      border-left: 5px solid var(--success-color);
+    }
+
+    .status-moderate {
+      border-left: 5px solid var(--moderate-color);
+    }
+
+    .status-high {
+      border-left: 5px solid var(--danger-color);
+    }
+
+    #dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin: 20px;
+    }
+
+    #chart-container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 30px auto;
+      background: var(--card-bg);
+      padding: 25px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 20px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .stat-value {
+      font-size: 2.2rem;
+      font-weight: bold;
+      margin: 10px 0;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: #888;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      font-size: 0.9em;
+      color: #888;
+      margin-top: 30px;
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+      box-shadow: var(--shadow);
+    }
+
+    .last-updated {
+      text-align: center;
+      margin: 15px;
+      font-style: italic;
+      color: #888;
+      background: var(--card-bg);
+      padding: 10px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      display: inline-block;
+    }
+
+    .icon {
+      margin-right: 8px;
+      font-size: 1.1em;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+
+    .status-low .status-indicator {
+      background-color: var(--success-color);
+      box-shadow: 0 0 8px var(--success-color);
+    }
+
+    .status-moderate .status-indicator {
+      background-color: var(--moderate-color);
+      box-shadow: 0 0 8px var(--moderate-color);
+    }
+
+    .status-high .status-indicator {
+      background-color: var(--danger-color);
+      box-shadow: 0 0 8px var(--danger-color);
+    }
+
+    .progress-container {
+      width: 100%;
+      background-color: rgba(0,0,0,0.1);
+      border-radius: 10px;
+      margin: 15px 0;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      position: relative;
+    }
+
+    .progress-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%);
+    }
+
+    .progress-low {
+      background-color: var(--success-color);
+    }
+
+    .progress-moderate {
+      background-color: var(--moderate-color);
+    }
+
+    .progress-high {
+      background-color: var(--danger-color);
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 15px;
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .legend-color {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      margin-right: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
+
+    .device-status {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 20px;
+    }
+
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      transition: transform 0.3s ease;
+    }
+
+    .status-item:hover {
+      transform: translateY(-3px);
+    }
+
+    .status-label {
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+    }
+
+    .status-value {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+    }
+
+    .status-on {
+      background-color: rgba(33, 150, 243, 0.2);
+      color: var(--moderate-color);
+    }
+
+    .status-off {
+      background-color: rgba(244, 67, 54, 0.2);
+      color: var(--danger-color);
+    }
+
+    .status-active {
+      background-color: rgba(76, 175, 80, 0.2);
+      color: var(--success-color);
+    }
+
+    .alert-section {
+      background: var(--card-bg);
+      padding: 25px;
+      margin: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+    }
+
+    .alert-phone {
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+
+    .alert-email {
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+
+    .section-title {
+      margin: 25px 20px 15px;
+      font-size: 1.5rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      color: var(--primary-color);
+    }
+
+    .map-container {
+      height: 300px;
+      background: var(--card-bg);
+      margin: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .map-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(0,188,212,0.1) 0%, rgba(0,151,167,0.1) 100%);
+      color: var(--text-color);
+      font-size: 1.2rem;
+    }
+
+    .sensor-health {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .health-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .health-good {
+      background-color: var(--success-color);
+      box-shadow: 0 0 8px var(--success-color);
+    }
+
+    .health-warning {
+      background-color: var(--warning-color);
+      box-shadow: 0 0 8px var(--warning-color);
+    }
+
+    .health-critical {
+      background-color: var(--danger-color);
+      box-shadow: 0 0 8px var(--danger-color);
+    }
+
+    .threshold-control {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 10px 0;
+    }
+
+    .threshold-slider {
+      flex-grow: 1;
+      margin: 0 15px;
+    }
+
+    .threshold-value {
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .notification-bell {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: var(--danger-color);
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+
+    .notification-panel {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      width: 300px;
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      max-height: 400px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .notification-item {
+      padding: 15px;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .notification-time {
+      font-size: 0.8rem;
+      color: #888;
+      margin-top: 5px;
+    }
+
+    .notification-high {
+      border-left: 3px solid var(--danger-color);
+    }
+
+    .notification-moderate {
+      border-left: 3px solid var(--moderate-color);
+    }
+
+    .notification-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .settings-panel {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      width: 300px;
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      padding: 20px;
+      display: none;
+    }
+
+    .settings-option {
+      margin: 15px 0;
+    }
+
+    .settings-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .settings-input {
+      width: 100%;
+      padding: 8px;
+      border-radius: var(--border-radius);
+      border: 1px solid rgba(0,0,0,0.1);
+      background: var(--card-bg);
+      color: var(--text-color);
+    }
+
+    .settings-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .settings-btn {
+      padding: 8px 15px;
+      border-radius: var(--border-radius);
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .settings-save {
+      background-color: var(--success-color);
+      color: white;
+    }
+
+    .settings-cancel {
+      background-color: var(--danger-color);
+      color: white;
+    }
+
+    .floating-buttons {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      z-index: 999;
+    }
+
+    .floating-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+    }
+
+    .floating-btn:hover {
+      transform: translateY(-3px) scale(1.1);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .floating-btn i {
+      font-size: 1.3rem;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1001;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: var(--border-radius);
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-title {
+      margin-top: 0;
+      color: var(--primary-color);
+    }
+
+    .modal-body {
+      margin: 20px 0;
+    }
+
+    .modal-footer {
+      text-align: right;
+    }
+
+    .modal-btn {
+      padding: 8px 20px;
+      border-radius: var(--border-radius);
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .modal-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .history-table th, .history-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .history-table th {
+      background-color: rgba(0,0,0,0.05);
+      font-weight: 600;
+    }
+
+    .history-table tr:hover {
+      background-color: rgba(0,0,0,0.03);
+    }
+
+    .history-status {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .status-badge-low {
+      background-color: rgba(76, 175, 80, 0.2);
+      color: var(--success-color);
+    }
+
+    .status-badge-moderate {
+      background-color: rgba(33, 150, 243, 0.2);
+      color: var(--moderate-color);
+    }
+
+    .status-badge-high {
+      background-color: rgba(244, 67, 54, 0.2);
+      color: var(--danger-color);
+    }
+
+    @media (max-width: 768px) {
+      #dashboard {
+        grid-template-columns: 1fr;
+      }
+      
+      #chart-container {
+        width: 95%;
+        padding: 15px;
+      }
+      
+      .stats-container, .device-status {
+        grid-template-columns: 1fr;
+      }
+
+      .notification-panel, .settings-panel {
+        width: 90%;
+        right: 5%;
+      }
+
+      .floating-buttons {
+        bottom: 20px;
+        right: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="animate_animated animate_fadeIn">
+    <h1><i class="fas fa-volume-up icon"></i>Noise Pollution Monitoring Dashboard</h1>
+    <p>Real-time data from IoT noise sensors across the city</p>
+    <div style="position: absolute; top: 20px; right: 120px;">
+      <div class="notification-bell" id="notificationBell">
+        <i class="fas fa-bell icon" style="font-size: 1.3rem; color: white;"></i>
+        <span class="notification-badge" id="notificationCount">0</span>
+      </div>
+    </div>
+    <button class="toggle-btn" onclick="toggleDarkMode()">
+      <i class="fas fa-moon icon" id="themeIcon"></i>Toggle Mode
+    </button>
+  </header>
+
+  <!-- Stats Overview -->
+  <div class="stats-container animate_animated animate_fadeInUp">
+    <div class="stat-card">
+      <div class="stat-label"><i class="fas fa-volume-up icon"></i>Current Noise Level</div>
+      <div class="stat-value" id="current-level">-- dB</div>
+      <div class="progress-container">
+        <div class="progress-bar" id="current-progress"></div>
+      </div>
+      <div class="sensor-health">
+        <div class="health-indicator health-good" id="health-indicator"></div>
+        <span id="health-status">Sensor status: Good</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><i class="fas fa-chart-line icon"></i>Average (24h)</div>
+      <div class="stat-value" id="average-level">-- dB</div>
+      <div style="margin-top: 15px;">
+        <div class="stat-label"><i class="fas fa-arrow-up icon"></i>Trend</div>
+        <div id="trend-indicator">--</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><i class="fas fa-exclamation-triangle icon"></i>Peak Today</div>
+      <div class="stat-value" id="peak-level">-- dB</div>
+      <div style="margin-top: 15px;">
+        <div class="stat-label"><i class="fas fa-clock icon"></i>Peak Time</div>
+        <div id="peak-time">--:--</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><i class="fas fa-info-circle icon"></i>Status</div>
+      <div class="stat-value" id="current-status">--</div>
+      <div style="margin-top: 15px;">
+        <div class="stat-label"><i class="fas fa-map-marker-alt icon"></i>Location</div>
+        <div id="sensor-location">Downtown Area</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: var(--success-color);"></div>
+      <span>Low (0-60 dB)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: var(--moderate-color);"></div>
+      <span>Moderate (61-80 dB)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: var(--danger-color);"></div>
+      <span>High (81+ dB)</span>
+    </div>
+  </div>
+
+  <!-- Device Status -->
+  <h2 class="section-title"><i class="fas fa-microchip icon"></i>Device Status</h2>
+  <div class="device-status">
+    <div class="status-item">
+      <span class="status-label"><i class="fas fa-bell icon"></i>Buzzer Alarm</span>
+      <span class="status-value status-off" id="buzzer-status">OFF</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label"><i class="fas fa-lightbulb icon" style="color: red;"></i>Red LED</span>
+      <span class="status-value status-off" id="red-led-status">OFF</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label"><i class="fas fa-lightbulb icon" style="color: green;"></i>Green LED</span>
+      <span class="status-value status-off" id="green-led-status">OFF</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label"><i class="fas fa-lightbulb icon" style="color: var(--moderate-color);"></i>Blue LED</span>
+      <span class="status-value status-on" id="blue-led-status">ON</span>
+    </div>
+  </div>
+
+  <!-- Alert Section -->
+  <h2 class="section-title"><i class="fas fa-bell icon"></i>Alert Settings</h2>
+  <div class="alert-section">
+    <div class="status-item">
+      <span class="status-label"><i class="fas fa-sms icon"></i>SMS Alerts</span>
+      <span class="status-value status-active" id="sms-status">ACTIVE</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label"><i class="fas fa-envelope icon"></i>Email Alerts</span>
+      <span class="status-value status-active" id="email-status">ACTIVE</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label"><i class="fas fa-phone icon"></i>Alert Phone</span>
+      <span class="alert-phone" id="alert-phone">82618090</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label"><i class="fas fa-at icon"></i>Alert Email</span>
+      <span class="alert-email" id="alert-email">saikrishnshelar2005@gmail.com</span>
+    </div>
+    <div class="threshold-control">
+      <span><i class="fas fa-sliders-h icon"></i>Alert Threshold</span>
+      <input type="range" min="50" max="100" value="80" class="threshold-slider" id="threshold-slider">
+      <span class="threshold-value" id="threshold-value">80 dB</span>
+    </div>
+  </div>
+
+  <!-- Sensor Map -->
+  <h2 class="section-title"><i class="fas fa-map-marked-alt icon"></i>Sensor Location</h2>
+  <div class="map-container">
+    <div class="map-placeholder">
+      <i class="fas fa-map-marker-alt" style="font-size: 2rem; color: var(--primary-color); margin-right: 10px;"></i>
+      <span>Sensor Location: Downtown Area (19.0760° N, 72.8777° E)</span>
+    </div>
+  </div>
+
+  <!-- Recent Readings -->
+  <h2 class="section-title"><i class="fas fa-history icon"></i>Recent Readings</h2>
+  <div id="dashboard"></div>
+
+  <!-- Last Updated -->
+  <div class="last-updated" id="last-updated">
+    Last updated: --
+  </div>
+
+  <!-- Chart Container -->
+  <h2 class="section-title"><i class="fas fa-chart-line icon"></i>Noise Level Trend</h2>
+  <div id="chart-container" class="animate_animated animate_fadeInUp">
+    <canvas id="noiseChart"></canvas>
+  </div>
+
+  <!-- History Data -->
+  <h2 class="section-title"><i class="fas fa-database icon"></i>Historical Data</h2>
+  <div class="alert-section">
+    <div style="overflow-x: auto;">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Noise Level</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="history-table-body">
+          <!-- Will be populated by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    <p>Designed by Saikrishn Shelar – Noise Monitoring System</p>
+    <p><i class="fas fa-clock icon"></i>Real-time monitoring | <i class="fas fa-bell icon"></i>Instant alerts | <i class="fas fa-qrcode icon"></i>Device ID: NMS-8266</p>
+    <p><i class="fas fa-wifi icon"></i>Signal Strength: Excellent | <i class="fas fa-battery-full icon"></i>Battery: 87%</p>
+  </footer>
+
+  <!-- Floating Action Buttons -->
+  <div class="floating-buttons">
+    <button class="floating-btn" onclick="showSettings()">
+      <i class="fas fa-cog"></i>
+    </button>
+    <button class="floating-btn" onclick="showHistory()">
+      <i class="fas fa-history"></i>
+    </button>
+    <button class="floating-btn" onclick="refreshData()">
+      <i class="fas fa-sync-alt"></i>
+    </button>
+  </div>
+
+  <!-- Notification Panel -->
+  <div class="notification-panel" id="notificationPanel">
+    <div class="notification-header">
+      <h3>Notifications</h3>
+      <button onclick="clearNotifications()" style="background: none; border: none; color: var(--primary-color); cursor: pointer;">
+        Clear All
+      </button>
+    </div>
+    <div id="notification-list">
+      <!-- Notifications will be added here -->
+    </div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div class="settings-panel" id="settingsPanel">
+    <h3>Settings</h3>
+    <div class="settings-option">
+      <label class="settings-label">Alert Threshold (dB)</label>
+      <input type="range" min="50" max="100" value="80" class="settings-input" id="settings-threshold">
+      <div style="text-align: center; margin-top: 5px;">
+        <span id="settings-threshold-value">80 dB</span>
+      </div>
+    </div>
+    <div class="settings-option">
+      <label class="settings-label">Email Address</label>
+      <input type="email" class="settings-input" id="settings-email" value="saikrishnshelar2005@gmail.com">
+    </div>
+    <div class="settings-option">
+      <label class="settings-label">Phone Number</label>
+      <input type="tel" class="settings-input" id="settings-phone" value="82618090">
+    </div>
+    <div class="settings-option">
+      <label class="settings-label">
+        <input type="checkbox" id="settings-sms" checked> Enable SMS Alerts
+      </label>
+    </div>
+    <div class="settings-option">
+      <label class="settings-label">
+        <input type="checkbox" id="settings-email-toggle" checked> Enable Email Alerts
+      </label>
+    </div>
+    <div class="settings-buttons">
+      <button class="settings-btn settings-cancel" onclick="hideSettings()">Cancel</button>
+      <button class="settings-btn settings-save" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+
+  <!-- History Modal -->
+  <div class="modal" id="historyModal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="hideModal('historyModal')">&times;</span>
+      <h2 class="modal-title"><i class="fas fa-history icon"></i>Historical Data</h2>
+      <div class="modal-body">
+        <div style="margin-bottom: 20px;">
+          <label>Date Range:</label>
+          <select id="history-range" style="margin-left: 10px; padding: 5px; border-radius: var(--border-radius); background: var(--card-bg); color: var(--text-color);">
+            <option value="1">Last 24 hours</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+          </select>
+        </div>
+        <div style="overflow-x: auto; max-height: 400px;">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Noise Level</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="modal-history-body">
+              <!-- Will be populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-primary" onclick="exportHistory()">
+          <i class="fas fa-download icon"></i>Export Data
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Sound -->
+  <audio id="alertSound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
+
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    // Initialize AOS (Animate On Scroll)
+    AOS.init({
+      duration: 800,
+      easing: 'ease-in-out',
+      once: true
+    });
+
+    let chart;
+    const noiseData = [];
+    const timeLabels = [];
+    let lastAlertTime = 0;
+    let ALERT_COOLDOWN = 30000; // 30 seconds cooldown between alerts
+    let NOISE_THRESHOLD = 80; // dB level to trigger alerts
+    let ALERT_EMAIL = "saikrishnshelar2005@gmail.com"; // Your email address
+    let ALERT_PHONE = "82618090"; // Your phone number
+    let notifications = [];
+    let historicalData = [];
+    let sensorHealth = 'good';
+    let trend = 'stable';
+
+    // DOM Elements
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationPanel = document.getElementById('notificationPanel');
+    const notificationList = document.getElementById('notificationList');
+    const notificationCount = document.getElementById('notificationCount');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const historyModal = document.getElementById('historyModal');
+    const thresholdSlider = document.getElementById('threshold-slider');
+    const thresholdValue = document.getElementById('threshold-value');
+    const settingsThreshold = document.getElementById('settings-threshold');
+    const settingsThresholdValue = document.getElementById('settings-threshold-value');
+    const settingsEmail = document.getElementById('settings-email');
+    const settingsPhone = document.getElementById('settings-phone');
+    const settingsSms = document.getElementById('settings-sms');
+    const settingsEmailToggle = document.getElementById('settings-email-toggle');
+
+    // Toggle dark/light mode
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const icon = document.getElementById('themeIcon');
+      if (document.body.classList.contains('dark-mode')) {
+        icon.classList.remove('fa-moon');
+        icon.classList.add('fa-sun');
+        localStorage.setItem('darkMode', 'enabled');
+      } else {
+        icon.classList.remove('fa-sun');
+        icon.classList.add('fa-moon');
+        localStorage.setItem('darkMode', 'disabled');
+      }
+    }
+
+    // Check for saved dark mode preference
+    if (localStorage.getItem('darkMode') === 'enabled') {
+      document.body.classList.add('dark-mode');
+      document.getElementById('themeIcon').classList.remove('fa-moon');
+      document.getElementById('themeIcon').classList.add('fa-sun');
+    }
+
+    // Get status class based on noise level
+    function getStatusClass(level) {
+      if (level <= 60) return 'status-low';
+      if (level <= 80) return 'status-moderate';
+      return 'status-high';
+    }
+
+    // Get status text based on noise level
+    function getStatusText(level) {
+      if (level <= 60) return 'LOW';
+      if (level <= 80) return 'MODERATE';
+      return 'HIGH';
+    }
+
+    // Get progress bar class based on noise level
+    function getProgressClass(level) {
+      if (level <= 60) return 'progress-low';
+      if (level <= 80) return 'progress-moderate';
+      return 'progress-high';
+    }
+
+    // Calculate width for progress bar
+    function calculateWidth(level) {
+      return Math.min(100, (level / 120) * 100) + '%';
+    }
+
+    // Update device status indicators
+    function updateDeviceStatus(level) {
+      const buzzer = document.getElementById('buzzer-status');
+      const redLed = document.getElementById('red-led-status');
+      const greenLed = document.getElementById('green-led-status');
+      const blueLed = document.getElementById('blue-led-status');
+      
+      if (level > NOISE_THRESHOLD) {
+        buzzer.textContent = 'ON';
+        buzzer.classList.remove('status-off');
+        buzzer.classList.add('status-on');
+        
+        redLed.textContent = 'ON';
+        greenLed.textContent = 'OFF';
+        blueLed.textContent = 'OFF';
+        redLed.classList.add('status-on');
+        redLed.classList.remove('status-off');
+        greenLed.classList.add('status-off');
+        greenLed.classList.remove('status-on');
+        blueLed.classList.add('status-off');
+        blueLed.classList.remove('status-on');
+      } else if (level > 60) {
+        buzzer.textContent = 'OFF';
+        buzzer.classList.remove('status-on');
+        buzzer.classList.add('status-off');
+        
+        redLed.textContent = 'OFF';
+        greenLed.textContent = 'OFF';
+        blueLed.textContent = 'ON';
+        redLed.classList.add('status-off');
+        redLed.classList.remove('status-on');
+        greenLed.classList.add('status-off');
+        greenLed.classList.remove('status-on');
+        blueLed.classList.add('status-on');
+        blueLed.classList.remove('status-off');
+      } else {
+        buzzer.textContent = 'OFF';
+        buzzer.classList.remove('status-on');
+        buzzer.classList.add('status-off');
+        
+        redLed.textContent = 'OFF';
+        greenLed.textContent = 'ON';
+        blueLed.textContent = 'OFF';
+        redLed.classList.add('status-off');
+        redLed.classList.remove('status-on');
+        greenLed.classList.add('status-on');
+        greenLed.classList.remove('status-off');
+        blueLed.classList.add('status-off');
+        blueLed.classList.remove('status-on');
+      }
+    }
+
+    // Add a new notification
+    function addNotification(message, level) {
+      const notification = {
+        id: Date.now(),
+        message: message,
+        level: level,
+        time: new Date()
+      };
+      
+      notifications.unshift(notification);
+      updateNotificationUI();
+      
+      // Show the notification panel if it's not already visible
+      if (notificationPanel.style.display !== 'block') {
+        notificationCount.textContent = parseInt(notificationCount.textContent) + 1;
+      }
+    }
+
+    // Update notification UI
+    function updateNotificationUI() {
+      notificationList.innerHTML = '';
+      notifications.forEach(notif => {
+        const notifElement = document.createElement('div');
+        notifElement.className = notification-item ${notif.level > NOISE_THRESHOLD ? 'notification-high' : 'notification-moderate'};
+        notifElement.innerHTML = `
+          <div>${notif.message}</div>
+          <div class="notification-time">${notif.time.toLocaleString()}</div>
+        `;
+        notificationList.appendChild(notifElement);
+      });
+      
+      notificationCount.textContent = notifications.length;
+    }
+
+    // Clear all notifications
+    function clearNotifications() {
+      notifications = [];
+      updateNotificationUI();
+      notificationPanel.style.display = 'none';
+    }
+
+    // Toggle notification panel
+    notificationBell.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (notificationPanel.style.display === 'block') {
+        notificationPanel.style.display = 'none';
+      } else {
+        notificationPanel.style.display = 'block';
+        notificationCount.textContent = '0';
+        updateNotificationUI();
+      }
+    });
+
+    // Close panels when clicking outside
+    document.addEventListener('click', function() {
+      notificationPanel.style.display = 'none';
+      settingsPanel.style.display = 'none';
+    });
+
+    // Prevent panel from closing when clicking inside
+    notificationPanel.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+
+    settingsPanel.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+
+    // Show settings panel
+    function showSettings() {
+      settingsPanel.style.display = 'block';
+      // Populate settings with current values
+      settingsThreshold.value = NOISE_THRESHOLD;
+      settingsThresholdValue.textContent = NOISE_THRESHOLD + ' dB';
+      settingsEmail.value = ALERT_EMAIL;
+      settingsPhone.value = ALERT_PHONE;
+      settingsSms.checked = document.getElementById('sms-status').textContent === 'ACTIVE';
+      settingsEmailToggle.checked = document.getElementById('email-status').textContent === 'ACTIVE';
+    }
+
+    // Hide settings panel
+    function hideSettings() {
+      settingsPanel.style.display = 'none';
+    }
+
+    // Save settings
+    function saveSettings() {
+      NOISE_THRESHOLD = parseInt(settingsThreshold.value);
+      thresholdSlider.value = NOISE_THRESHOLD;
+      thresholdValue.textContent = NOISE_THRESHOLD + ' dB';
+      ALERT_EMAIL = settingsEmail.value;
+      ALERT_PHONE = settingsPhone.value;
+      
+      // Update alert status
+      document.getElementById('sms-status').textContent = settingsSms.checked ? 'ACTIVE' : 'INACTIVE';
+      document.getElementById('email-status').textContent = settingsEmailToggle.checked ? 'ACTIVE' : 'INACTIVE';
+      document.getElementById('alert-email').textContent = ALERT_EMAIL;
+      document.getElementById('alert-phone').textContent = ALERT_PHONE;
+      
+      // Show success message
+      Toastify({
+        text: "Settings saved successfully",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)"
+      }).showToast();
+      
+      hideSettings();
+    }
+
+    // Show history modal
+    function showHistory() {
+      showModal('historyModal');
+      // For demo purposes, we'll just use the same data
+      // In a real app, you'd fetch historical data based on the selected range
+      updateHistoryTable();
+    }
+
+    // Show modal
+    function showModal(modalId) {
+      document.getElementById(modalId).style.display = 'flex';
+    }
+
+    // Hide modal
+    function hideModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Update history table
+    function updateHistoryTable() {
+      const tableBody = document.getElementById('modal-history-body');
+      tableBody.innerHTML = '';
+      
+      // For demo, we'll generate some fake historical data
+      if (historicalData.length === 0) {
+        const now = new Date();
+        for (let i = 0; i < 24; i++) {
+          const time = new Date(now.getTime() - i * 60 * 60 * 1000);
+          const level = Math.floor(Math.random() * 40) + 50; // Random level between 50-90 dB
+          historicalData.push({
+            date: time.toLocaleDateString(),
+            time: time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            level: level,
+            status: getStatusText(level)
+          });
+        }
+      }
+      
+      historicalData.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.date}</td>
+          <td>${item.time}</td>
+          <td>${item.level} dB</td>
+          <td><span class="history-status status-badge-${item.status.toLowerCase()}">${item.status}</span></td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Export history data
+    function exportHistory() {
+      // In a real app, this would export the data to CSV or PDF
+      Toastify({
+        text: "Preparing data for export...",
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)"
+      }).showToast();
+    }
+
+    // Refresh data manually
+    function refreshData() {
+      fetchData();
+      Toastify({
+        text: "Refreshing data...",
+        duration: 2000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: "linear-gradient(to right, #2196F3, #00bcd4)"
+      }).showToast();
+    }
+
+    // Update threshold value when slider changes
+    thresholdSlider.addEventListener('input', function() {
+      thresholdValue.textContent = this.value + ' dB';
+    });
+
+    settingsThreshold.addEventListener('input', function() {
+      settingsThresholdValue.textContent = this.value + ' dB';
+    });
+
+    // Check sensor health (simulated)
+    function checkSensorHealth() {
+      const healthLevels = ['good', 'warning', 'critical'];
+      const healthMessages = ['Sensor status: Good', 'Sensor status: Warning', 'Sensor status: Critical'];
+      const healthClasses = ['health-good', 'health-warning', 'health-critical'];
+      
+      // Randomly change health status for demo purposes
+      if (Math.random() > 0.9) {
+        sensorHealth = healthLevels[Math.floor(Math.random() * healthLevels.length)];
+      }
+      
+      const healthIndicator = document.getElementById('health-indicator');
+      const healthStatus = document.getElementById('health-status');
+      
+      // Remove all health classes
+      healthIndicator.classList.remove('health-good', 'health-warning', 'health-critical');
+      
+      // Add current health class
+      const healthIndex = healthLevels.indexOf(sensorHealth);
+      healthIndicator.classList.add(healthClasses[healthIndex]);
+      healthStatus.textContent = healthMessages[healthIndex];
+      
+      // If health is critical, show alert
+      if (sensorHealth === 'critical') {
+        addNotification('Sensor health critical - maintenance required', 100);
+      }
+    }
+
+    // Determine trend based on data
+    function calculateTrend(feeds) {
+      if (feeds.length < 2) return 'stable';
+      
+      const current = parseInt(feeds[0].field1);
+      const previous = parseInt(feeds[1].field1);
+      
+      if (current > previous + 5) return 'increasing';
+      if (current < previous - 5) return 'decreasing';
+      return 'stable';
+    }
+
+    // Update trend indicator
+    function updateTrendIndicator(trend) {
+      const trendElement = document.getElementById('trend-indicator');
+      trendElement.innerHTML = '';
+      
+      let icon, text, color;
+      switch(trend) {
+        case 'increasing':
+          icon = '<i class="fas fa-arrow-up" style="color: var(--danger-color);"></i>';
+          text = 'Increasing';
+          color = 'var(--danger-color)';
+          break;
+        case 'decreasing':
+          icon = '<i class="fas fa-arrow-down" style="color: var(--success-color);"></i>';
+          text = 'Decreasing';
+          color = 'var(--success-color)';
+          break;
+        default:
+          icon = '<i class="fas fa-arrows-alt-h" style="color: var(--moderate-color);"></i>';
+          text = 'Stable';
+          color = 'var(--moderate-color)';
+      }
+      
+      trendElement.innerHTML = ${icon} ${text};
+    }
+
+    // Send email alert
+    async function sendEmailAlert(noiseLevel) {
+      try {
+        // In a real implementation, you would call your backend API to send the email
+        console.log(Sending email alert to ${ALERT_EMAIL} - Noise level: ${noiseLevel} dB);
+        
+        // Simulate API call to send email
+        const response = await fetch('https://your-email-service-api.com/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: ALERT_EMAIL,
+            subject: 'Noise Alert: High Noise Level Detected',
+            message: Warning! High noise level detected: ${noiseLevel} dB at ${new Date().toLocaleString()}.
+          })
+        });
+        
+        if (response.ok) {
+          console.log('Email alert sent successfully');
+          addNotification(Email alert sent (${noiseLevel} dB), noiseLevel);
+          
+          Toastify({
+            text: <i class="fas fa-envelope"></i> Email alert sent to ${ALERT_EMAIL},
+            duration: 5000,
+            gravity: "top",
+            position: "right",
+            backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+            escapeMarkup: false
+          }).showToast();
+        } else {
+          console.error('Failed to send email alert');
+          addNotification('Failed to send email alert', noiseLevel);
+        }
+      } catch (error) {
+        console.error('Error sending email alert:', error);
+        addNotification('Error sending email alert', noiseLevel);
+      }
+    }
+
+    // Update statistics
+    function updateStats(feeds) {
+      if (feeds.length === 0) return;
+      
+      const latest = feeds[0];
+      const currentLevel = parseInt(latest.field1);
+      
+      document.getElementById('current-level').textContent = currentLevel + ' dB';
+      document.getElementById('current-status').textContent = getStatusText(currentLevel);
+      document.getElementById('current-status').className = getStatusClass(currentLevel);
+      
+      const progressBar = document.getElementById('current-progress');
+      progressBar.className = 'progress-bar ' + getProgressClass(currentLevel);
+      progressBar.style.width = calculateWidth(currentLevel);
+      
+      // Calculate average
+      const sampleSize = Math.min(24, feeds.length);
+      const sum = feeds.slice(0, sampleSize).reduce((acc, feed) => acc + parseInt(feed.field1), 0);
+      const avg = Math.round(sum / sampleSize);
+      document.getElementById('average-level').textContent = avg + ' dB';
+      
+      // Find peak
+      let peak = 0;
+      let peakTime = '--:--';
+      feeds.forEach(feed => {
+        const level = parseInt(feed.field1);
+        if (level > peak) {
+          peak = level;
+          peakTime = new Date(feed.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+      });
+      document.getElementById('peak-level').textContent = peak + ' dB';
+      document.getElementById('peak-time').textContent = peakTime;
+      
+      // Update last updated time
+      const lastUpdated = new Date(latest.created_at);
+      document.getElementById('last-updated').textContent = 'Last updated: ' + lastUpdated.toLocaleString();
+      
+      // Update device status
+      updateDeviceStatus(currentLevel);
+      
+      // Check sensor health
+      checkSensorHealth();
+      
+      // Calculate and update trend
+      trend = calculateTrend(feeds);
+      updateTrendIndicator(trend);
+    }
+
+    // Update dashboard cards
+    function updateDashboard(feeds) {
+      const dashboard = document.getElementById('dashboard');
+      dashboard.innerHTML = '';
+
+      const recentFeeds = feeds.slice(0, 6);
+      
+      recentFeeds.forEach(feed => {
+        const level = parseInt(feed.field1);
+        const status = getStatusText(level);
+        const statusClass = getStatusClass(level);
+        const time = new Date(feed.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const date = new Date(feed.created_at).toLocaleDateString();
+
+        const card = `
+          <div class="card ${statusClass}" data-aos="fade-up">
+            <h3><span class="status-indicator"></span>Noise Level: ${level} dB</h3>
+            <p><strong>Status:</strong> ${status}</p>
+            <p><strong>Time:</strong> ${time}</p>
+            <p><strong>Date:</strong> ${date}</p>
+            <div class="progress-container">
+              <div class="progress-bar ${getProgressClass(level)}" style="width: ${calculateWidth(level)}"></div>
+            </div>
+          </div>`;
+        dashboard.innerHTML += card;
+      });
+    }
+
+    // Update history table in main view
+    function updateHistoryTableMain(feeds) {
+      const tableBody = document.getElementById('history-table-body');
+      tableBody.innerHTML = '';
+      
+      const recentFeeds = feeds.slice(0, 5);
+      
+      recentFeeds.forEach(feed => {
+        const level = parseInt(feed.field1);
+        const status = getStatusText(level);
+        const time = new Date(feed.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const date = new Date(feed.created_at).toLocaleDateString();
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${date}</td>
+          <td>${time}</td>
+          <td>${level} dB</td>
+          <td><span class="history-status status-badge-${status.toLowerCase()}">${status}</span></td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Setup chart
+    function setupChart() {
+      const ctx = document.getElementById('noiseChart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: timeLabels,
+          datasets: [{
+            label: 'Noise Level (dB)',
+            data: noiseData,
+            borderColor: '#00bcd4',
+            backgroundColor: (context) => {
+              const chart = context.chart;
+              const {ctx, chartArea} = chart;
+              if (!chartArea) return null;
+              
+              const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+              gradient.addColorStop(0, 'rgba(0, 188, 212, 0)');
+              gradient.addColorStop(1, 'rgba(0, 188, 212, 0.2)');
+              return gradient;
+            },
+            borderWidth: 2,
+            pointBackgroundColor: function(context) {
+              const value = context.dataset.data[context.dataIndex];
+              if (value <= 60) return '#4caf50';
+              if (value <= 80) return '#2196F3';
+              return '#ff4d4d';
+            },
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ${context.dataset.label}: ${context.raw} dB (${getStatusText(context.raw)});
+                }
+              }
+            },
+            legend: {
+              labels: {
+                font: {
+                  size: 14
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Decibels (dB)',
+                font: {
+                  size: 14,
+                  weight: 'bold'
+                }
+              },
+              grid: {
+                color: 'rgba(0, 0, 0, 0.1)'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Time',
+                font: {
+                  size: 14,
+                  weight: 'bold'
+                }
+              },
+              grid: {
+                display: false
+              }
+            }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          animation: {
+            duration: 1000
+          }
+        }
+      });
+    }
+
+    // Update chart with new data
+    function updateChart(feeds) {
+      noiseData.length = 0;
+      timeLabels.length = 0;
+
+      feeds.forEach(feed => {
+        noiseData.push(parseInt(feed.field1));
+        timeLabels.push(new Date(feed.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+      });
+
+      chart.data.labels = timeLabels;
+      chart.data.datasets[0].data = noiseData;
+      chart.update();
+    }
+
+    // Fetch data from ThingSpeak
+    async function fetchData() {
+      try {
+        const response = await fetch('https://api.thingspeak.com/channels/2922548/feeds.json?api_key=9WXF5RO1R5R9I2TI&results=24');
+        const data = await response.json();
+        const feeds = data.feeds.reverse();
+
+        updateStats(feeds);
+        updateDashboard(feeds);
+        updateHistoryTableMain(feeds);
+        
+        const latest = feeds[0];
+        const currentTime = Date.now();
+        const currentLevel = latest ? parseInt(latest.field1) : 0;
+        
+        if (latest && currentLevel > NOISE_THRESHOLD && currentTime - lastAlertTime > ALERT_COOLDOWN) {
+          document.getElementById('alertSound').play();
+          lastAlertTime = currentTime;
+          
+          // Show visual alert
+          Toastify({
+            text: <i class="fas fa-exclamation-triangle"></i> High Noise Alert! ${latest.field1} dB detected,
+            duration: 5000,
+            gravity: "top",
+            position: "right",
+            backgroundColor: "linear-gradient(to right, #ff4d4d, #f94409)",
+            escapeMarkup: false,
+            onClick: function() {
+              this.hideToast();
+            }
+          }).showToast();
+          
+          // Add notification
+          addNotification(High noise level detected: ${latest.field1} dB, currentLevel);
+          
+          // Send email alert if enabled
+          if (document.getElementById('email-status').textContent === 'ACTIVE') {
+            await sendEmailAlert(currentLevel);
+          }
+        }
+
+        updateChart(feeds);
+      } catch (error) {
+        console.error("Fetch error:", error);
+        Toastify({
+          text: "Error fetching data. Trying again...",
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          backgroundColor: "#ff9800"
+        }).showToast();
+      }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set the alert email and phone in the UI
+      document.getElementById('alert-email').textContent = ALERT_EMAIL;
+      document.getElementById('alert-phone').textContent = ALERT_PHONE;
+      
+      // Initialize threshold slider
+      thresholdValue.textContent = NOISE_THRESHOLD + ' dB';
+      thresholdSlider.value = NOISE_THRESHOLD;
+      
+      setupChart();
+      fetchData();
+      setInterval(fetchData, 15000); // Update every 15 seconds
+      
+      // Initialize health check
+      checkSensorHealth();
+      setInterval(checkSensorHealth, 60000); // Check health every minute
+    });
+  </script>
+</body>
+</html>
